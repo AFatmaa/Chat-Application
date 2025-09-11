@@ -1,5 +1,7 @@
 // Get references to DOM elements
 const messagesList = document.getElementById('messagesList');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
 
 const backendUrl = 'http://localhost:3000';
 
@@ -44,6 +46,47 @@ async function fetchInitialMessages() {
     messagesList.innerHTML = '<p style="color: red;">Could not load initial chat history.</p>';
   }
 }
+
+// Sends a new message to the backend via a POST request.
+async function sendMessages() {
+  const text = messageInput.value.trim();
+
+  if (text === '') {
+    return;
+  }
+
+  try {
+    // Send a POST request to the backend's /messages endpoint.
+    const response = await fetch(`${backendUrl}/messages`, {
+      method: 'POST', // Specify the HTTP method as POST.
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text: text })
+    });
+
+    if (response.ok) {
+      messageInput.value = '';
+    } else {
+      const errorData = await response.json();
+      console.error('Error sending message:', errorData.error);
+      alert(`Failed to send message: ${errorData.error}`);
+    }
+
+  } catch (error) {
+    console.error('Network error occured while sending message:', error);
+    alert('A network error occurred while sending the message.')
+  }
+  
+}
+
+sendButton.addEventListener('click', sendMessages);
+
+messageInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendMessages();
+  }
+});
 
 function initChatApp() {
   fetchInitialMessages();

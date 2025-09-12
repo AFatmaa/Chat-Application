@@ -3,7 +3,7 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const backendUrl = 'http://localhost:3000';
+const backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/';
 
 // Global array to store messages in the frontend's memory.
 let messages = [];

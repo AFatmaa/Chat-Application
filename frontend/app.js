@@ -23,6 +23,35 @@ function renderMessages() {
   messagesList.scrollTop = messagesList.scrollHeight;
 }
 
+// Starts a single long-polling request to the backend for new messages.
+async function startLongPolling() {
+
+  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
+  const queryString = lastMessageTime ? `?since=${lastMessageTime}` : '';
+  const url = `${backendUrl}/messages${queryString}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const newMessages = await response.json();
+
+    // If new messages are received, add them to our global 'messages' array and rerender.
+    if (newMessages.length > 0) {
+      messages.push(...newMessages);
+      renderMessages();
+    }
+  } catch (error) {
+    console.error('[Frontend Error] Long-polling request failed:', error.message);
+  } finally {
+    // Wait a very short moment and the start the next long-polling request.
+    setTimeout(startLongPolling, 50);
+  }
+  
+}
+
 // Fetches all messages from the backend API.
 // This function is specifically for the initial load of chat history.
 async function fetchInitialMessages() {
@@ -43,7 +72,9 @@ async function fetchInitialMessages() {
 
   } catch (error) {
     console.error('Error loading initial chat messages:', error);
-    messagesList.innerHTML = '<p style="color: red;">Could not load initial chat history.</p>';
+    if (messagesList) {
+      messagesList.innerHTML = '<p style="color: red;">Could not load initial chat history.</p>';
+    }
   }
 }
 
@@ -90,6 +121,7 @@ messageInput.addEventListener('keypress', (e) => {
 
 function initChatApp() {
   fetchInitialMessages();
+  startLongPolling();
 }
 
 initChatApp();

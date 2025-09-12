@@ -3,7 +3,7 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/';
+const backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
 
 // Global array to store messages in the frontend's memory.
 let messages = [];
@@ -40,7 +40,13 @@ async function startLongPolling() {
 
     // If new messages are received, add them to our global 'messages' array and rerender.
     if (newMessages.length > 0) {
-      messages.push(...newMessages);
+
+      newMessages.forEach(newMsg => {
+        // Only add if message with same id does not already exist
+        if (!messages.some(msg => msg.id === newMsg.id)) {
+          messages.push(newMsg);
+        }
+      });
       renderMessages();
     }
   } catch (error) {

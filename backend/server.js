@@ -100,5 +100,5 @@ app.post('/messages', (req, res) => {
 
 // Make the Express app listen for incoming requests on the specified port.
 app.listen(port, () => {
-  console.log(`Chat backend listening at http://localhost:${port}`);
+  console.log(`Chat backend listening on port ${port}`);
 });

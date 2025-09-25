@@ -53,7 +53,7 @@ async function startLongPolling() {
     console.error('[Frontend Error] Long-polling request failed:', error.message);
   } finally {
     // Wait a very short moment and the start the next long-polling request.
-    setTimeout(startLongPolling, 50);
+    setTimeout(startLongPolling, 1000);
   }
   
 }

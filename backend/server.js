@@ -1,25 +1,23 @@
-// Import necessary libraries
+import { server as WebSocketServer } from "websocket";
+const server = http.createServer(app);
+const webSocketServer = new WebSocketServer({ httpServer: server });
+
 const express = require('express');
 const cors = require('cors');
 
-// Create an Express application
 const app = express();
-// Define the port for the server to listen on.
 const port = 3000;
 
-// Our in-memory message storage
+// Stores chat messages temporarily (resets when server restarts)
 let messages = [];
 
-// This array will hold information about clients waiting for new messages (for Long-Polling).
+// Keeps track of clients waiting for new messages (for long-polling)
 const callBackForNewMessages = [];
 
-// This allows the frontend to talk to this backend.
 app.use(cors());
-// This is needed to read message text sent from the frontend.
 app.use(express.json());
 
-// GET /messages: Endpoint to retrieve all messages
-// This endpoint handles requests to get the chat history.
+// Returns existing messages or waits for new ones (long-polling)
 app.get('/messages', (req, res) => {
   // Get the 'since' parameter from the request URL 
   const { since } = req.query;
@@ -29,7 +27,7 @@ app.get('/messages', (req, res) => {
     res.json(messages);
   }
 
-  // Filter messages to find only those newer than the 'since' timestamp provided by the client.
+ // Avoid sending old messages again; only return messages after client's last timestamp
   const newMessagesForThisClient = messages.filter(message => message.timestamp > since);
 
   // If there are new messages immediately available for this client, send them now.
@@ -60,10 +58,9 @@ app.get('/messages', (req, res) => {
   }
 });
 
-// POST /messages: Endpoint to add a new message
-// This endpoint handles requests to send a new message to the chat.
+// Handle new chat message creation and notify waiting clients
 app.post('/messages', (req, res) => {
-  // Extract the 'text' property from the request body.
+  // Validate user input before creating new message
   const { text } = req.body; 
 
   if (!text) {

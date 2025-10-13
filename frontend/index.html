@@ -1,27 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Chat App</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application Selection</title>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-  <div>
-    <h1>My Simple Chat</h1>
-
-    <!-- This is where messages will be displayed -->
-    <div id="messagesList" class="messages-list">
-      <!-- Messages will be dynamically added here by JavaScript -->
+    <div class="landing-container">
+        <h1>Welcome to the Chat Application!</h1>
+        <p>Please select your preferred communication method:</p>
+        <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-polling.html" class="selection-button">Chat with Long Polling</a>
+        <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-websocket.html" class="selection-button">Chat with WebSocket</a>
     </div>
-
-    <!-- This is the input area for new messages  -->
-     <div>
-      <input type="text" id="messageInput" placeholder="Type your message...">
-      <button id="sendButton">Send</button>
-     </div>
-  </div>
-
-  <script src="app-polling.js"></script>
 </body>
 </html>

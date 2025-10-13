@@ -141,3 +141,66 @@ h1 {
   opacity: 0.85;
   font-family: "Courier New", monospace;
 }
+
+/* General page style (Mevcut body stilinizi koruyun, zaten geneldir) */
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  height: 100vh;
+}
+
+/* Landing Page Container (Yeni eklendi) */
+.landing-container {
+  background: #ffffff;
+  padding: 40px; /* Biraz daha fazla padding */
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Biraz daha belirgin gölge */
+  width: 500px; /* Daha geniş bir konteyner */
+  max-width: 90%;
+  text-align: center; /* İçeriği ortala */
+}
+
+/* Landing Page Başlığı (Mevcut h1 stilinizi kullanabiliriz) */
+.landing-container h1 {
+  color: #ff6f61; /* Ana renk tonunuz */
+  font-size: 2.2rem; /* Daha büyük başlık */
+  margin-bottom: 25px;
+}
+
+/* Landing Page Paragrafı (Yeni eklendi) */
+.landing-container p {
+  color: #555;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+/* Seçim Butonları (selection-button sınıfı ile, sendButton'a benzer ama daha genel) */
+.selection-button {
+  display: block; /* Her butonu ayrı satırda göster */
+  width: 70%; /* Konteynerin %70'ini kapla */
+  margin: 15px auto; /* Ortala ve aralarına boşluk ver */
+  padding: 15px 20px;
+  background: #ff6f61; /* Buton ana rengi */
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-decoration: none; /* Alt çizgiyi kaldır */
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease-in-out, box-shadow 0.2s ease;
+  box-shadow: 0 4px 8px rgba(255, 111, 97, 0.3); /* Hafif gölge */
+}
+
+.selection-button:hover {
+  background: #e85c50; /* Hover rengi */
+  transform: translateY(-3px) scale(1.02); /* Hafif yukarı kalkma ve büyüme */
+  box-shadow: 0 6px 12px rgba(255, 111, 97, 0.4); /* Hover'da daha belirgin gölge */
+}
+

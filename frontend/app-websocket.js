@@ -3,7 +3,7 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const socket = new WebSocket('ws://localhost:3000');
+const socket = new WebSocket('wss://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io');
 
 // Store all messages locally in the browser.
 let messages = [];

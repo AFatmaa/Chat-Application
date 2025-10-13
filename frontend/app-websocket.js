@@ -3,9 +3,9 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const socket = new WebSocket("ws://localhost:3000");
+const socket = new WebSocket('ws://localhost:3000');
 
-// Global array to store messages in the frontend's memory.
+// Store all messages locally in the browser.
 let messages = [];
 
 // It clears the existing display and adds each message as a new HTML element.
@@ -16,118 +16,92 @@ function renderMessages() {
     messageElement.classList.add('message');
     messageElement.innerHTML = `
       <span class="message-text">${message.text}</span>
-      <span class="message-timestamp">${new Date(message.timestamp).toLocaleDateString()}</span>
+      <span class="message-timestamp">${new Date(message.timestamp).toLocaleString("en-GB", {
+        day: "2-digit", 
+        month: "short", 
+        hour: "2-digit", 
+        minute: "2-digit"
+      })}</span>
+      <button class="like-btn" data-id="${message.id}">❤️ ${message.likes || 0}</button>
     `;
     messagesList.appendChild(messageElement);
   });
   messagesList.scrollTop = messagesList.scrollHeight;
 }
 
-// Starts a single long-polling request to the backend for new messages.
-async function startLongPolling() {
+//Sends a message to the WebSocket server with a specific command.
+function sendCommand(command, data) {
+  const payload = JSON.stringify({ command, ...data });
+  console.log("Payload before stringify:", { command, ...data });
+  console.log("Payload JSON string:", payload);
+  socket.send(payload);
+}
 
-  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
-  const queryString = lastMessageTime ? `?since=${lastMessageTime}` : '';
-  const url = `${backendUrl}/messages${queryString}`;
+// When the WebSocket connection is successfully opened.
+socket.onopen = () => {
+  console.log('Connected to WebSocket server');
+};
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+// When the WebSocket receives a message from the server.
+socket.onmessage = (event) => {
+  const data = JSON.parse(event.data);
 
-    const newMessages = await response.json();
-
-    // If new messages are received, add them to our global 'messages' array and rerender.
-    if (newMessages.length > 0) {
-
-      newMessages.forEach(newMsg => {
-        // Only add if message with same id does not already exist
-        if (!messages.some(msg => msg.id === newMsg.id)) {
-          messages.push(newMsg);
-        }
-      });
+  switch (data.command) {
+    // When the server sends the full chat history.
+    case 'initial-messages':
+      messages = data.messages;
       renderMessages();
-    }
-  } catch (error) {
-    console.error('[Frontend Error] Long-polling request failed:', error.message);
-  } finally {
-    // Wait a very short moment and the start the next long-polling request.
-    setTimeout(startLongPolling, 1000);
+      break;
+
+    // When a new message is received from any client.
+    case 'new-message':
+      messages.push(data.message);
+      renderMessages();
+      break;
+
+    // When a like count is updated.
+    case 'like-update':
+      const msg = messages.find((m) => m.id === data.messageId);
+      if (msg) {
+        msg.likes = data.likes;
+        renderMessages();
+      }
+      break;
+
+    default:
+      console.warn('Unknown command received:', data.command);
   }
-  
-}
+};
 
-// Fetches all messages from the backend API.
-// This function is specifically for the initial load of chat history.
-async function fetchInitialMessages() {
-  try {
-    // Send a GET request to the backend to get all messages.
-    const response = await fetch(`${backendUrl}/messages`);
+// When the WebSocket connection closes.
+socket.onclose = () => {
+  console.warn('WebSocket connection closed. Try refreshing the page.');
+};
 
-    // Check if the network request was successful.
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+// When an error occurs in the WebSocket.
+socket.onerror = (error) => {
+  console.error('WebSocket error:', error);
+};
 
-    const fetchedMessages = await response.json();
-
-    messages = fetchedMessages;
-
-    renderMessages();
-
-  } catch (error) {
-    console.error('Error loading initial chat messages:', error);
-    if (messagesList) {
-      messagesList.innerHTML = '<p style="color: red;">Could not load initial chat history.</p>';
-    }
-  }
-}
-
-// Sends a new message to the backend via a POST request.
-async function sendMessages() {
+// Sends a new chat message from the input box.
+function sendMessage() {
   const text = messageInput.value.trim();
+  if (!text) return;
 
-  if (text === '') {
-    return;
-  }
-
-  try {
-    // Send a POST request to the backend's /messages endpoint.
-    const response = await fetch(`${backendUrl}/messages`, {
-      method: 'POST', // Specify the HTTP method as POST.
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ text: text })
-    });
-
-    if (response.ok) {
-      messageInput.value = '';
-    } else {
-      const errorData = await response.json();
-      console.error('Error sending message:', errorData.error);
-      alert(`Failed to send message: ${errorData.error}`);
-    }
-
-  } catch (error) {
-    console.error('Network error occured while sending message:', error);
-    alert('A network error occurred while sending the message.')
-  }
-  
+  sendCommand('send-message', { message: { text } });
+  messageInput.value = "";
 }
 
-sendButton.addEventListener('click', sendMessages);
+sendButton.addEventListener('click', sendMessage);
 
 messageInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    sendMessages();
-  }
+  if (e.key === 'Enter') sendMessage();
 });
 
-function initChatApp() {
-  fetchInitialMessages();
-  startLongPolling();
-}
-
-initChatApp();
+// Handles clicks on any "like" button inside the message list.
+messagesList.addEventListener('click', (e) => {
+  if (e.target.classList.contains('like-btn')) {
+    const messageId = Number(e.target.dataset.id);
+    sendCommand('like-message', { messageId });
+  }
+});

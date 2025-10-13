@@ -1,11 +1,14 @@
-import { server as WebSocketServer } from "websocket";
-const server = http.createServer(app);
-const webSocketServer = new WebSocketServer({ httpServer: server });
-
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const WebSocket = require("ws");
 
 const app = express();
+app.use(cors());
+app.use(express.json());
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const port = 3000;
 
 // Stores chat messages temporarily (resets when server restarts)
@@ -14,12 +17,9 @@ let messages = [];
 // Keeps track of clients waiting for new messages (for long-polling)
 const callBackForNewMessages = [];
 
-app.use(cors());
-app.use(express.json());
-
 // Returns existing messages or waits for new ones (long-polling)
-app.get('/messages', (req, res) => {
-  // Get the 'since' parameter from the request URL 
+app.get('/messages', (req, res) => { 
+  // Get the 'since' parameter from the request URL
   const { since } = req.query;
   
   if (!since) {
@@ -27,7 +27,7 @@ app.get('/messages', (req, res) => {
     res.json(messages);
   }
 
- // Avoid sending old messages again; only return messages after client's last timestamp
+  // Avoid sending old messages again; only return messages after client's last timestamp
   const newMessagesForThisClient = messages.filter(message => message.timestamp > since);
 
   // If there are new messages immediately available for this client, send them now.
@@ -70,7 +70,8 @@ app.post('/messages', (req, res) => {
   const newMessage = {
     id: messages.length + 1,
     text: text,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    likes: 0
   };
 
   messages.push(newMessage);
@@ -80,7 +81,7 @@ app.post('/messages', (req, res) => {
   // Iterate through the waiting clients.
   for (let i = callBackForNewMessages.length -1; i >= 0; i--) {
     const waitingClient = callBackForNewMessages[i];
-
+    
     if (newMessage.timestamp > waitingClient.since) {
       clearTimeout(waitingClient.timeoutId);
 
@@ -93,9 +94,88 @@ app.post('/messages', (req, res) => {
       callBackForNewMessages.splice(i, 1);
     }
   }
+  broadcast({
+    command: "new-message",
+    message: newMessage,
+  });
 });
 
-// Make the Express app listen for incoming requests on the specified port.
-app.listen(port, () => {
-  console.log(`Chat backend listening on port ${port}`);
+// Helper: send data to all connected WebSocket clients
+function broadcast(data) {
+  const json = JSON.stringify(data);
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(json);
+    }
+  });
+}
+
+// Handle WebSocket connections
+wss.on("connection", (ws) => {
+  console.log("✅ New WebSocket client connected");
+
+  // When a new client connects, send existing messages
+  ws.send(
+    JSON.stringify({
+      command: "initial-messages",
+      messages: messages,
+    })
+  );
+
+  // When a WebSocket message is received
+  ws.on("message", (message) => {
+    try {
+      const data = JSON.parse(message);
+
+      switch (data.command) {
+        // A client sends a new chat message
+        case "send-message": {
+          const newMessage = {
+            id: messages.length + 1,
+            text: data.message.text,
+            timestamp: new Date().toISOString(),
+            likes: 0,
+          };
+          messages.push(newMessage);
+
+          // Broadcast to all clients (both WebSocket + polling)
+          broadcast({
+            command: "new-message",
+            message: newMessage,
+          });
+          break;
+        }
+
+        // A client likes a specific message
+        case "like-message": {
+          const msg = messages.find((m) => m.id === data.messageId);
+          if (msg) {
+            msg.likes += 1;
+
+            // Notify all WebSocket clients
+            broadcast({
+              command: "like-update",
+              messageId: msg.id,
+              likes: msg.likes,
+            });
+          }
+          break;
+        }
+
+        default:
+          console.warn("⚠️ Unknown command:", data.command);
+      }
+    } catch (err) {
+      console.error("Error handling WebSocket message:", err);
+    }
+  });
+
+  // Handle WebSocket disconnection
+  ws.on("close", () => {
+    console.log("❌ WebSocket client disconnected");
+  });
+});
+
+server.listen(port, () => {
+  console.log(`Chat server (HTTP + WebSocket) running on port ${port}`);
 });

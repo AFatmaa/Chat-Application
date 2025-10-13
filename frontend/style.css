@@ -109,3 +109,35 @@ h1 {
   background: #e85c50;
   transform: scale(1.05);
 }
+
+/* Like button */
+.like-btn {
+  background: none;
+  border: 2px solid #ff6f61;
+  color: #ff6f61;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Hover + click animation */
+.like-btn:hover {
+  background: #ff6f61;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Timestamp styling */
+.message-timestamp {
+  font-size: 0.75rem;
+  color: #555;
+  margin-left: auto;
+  margin-right: 8px;
+  opacity: 0.85;
+  font-family: "Courier New", monospace;
+}

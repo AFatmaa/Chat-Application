@@ -8,10 +8,18 @@
 </head>
 <body>
     <div class="landing-container">
-        <h1>Welcome to the Chat Application!</h1>
-        <p>Please select your preferred communication method:</p>
-        <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-polling.html" class="selection-button">Chat with Long Polling</a>
-        <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-websocket.html" class="selection-button">Chat with WebSocket</a>
+        <h1>Real-Time Chat Application</h1>
+        <p>Choose your communication method and start chatting!</p>
+        <div class="chat-option">
+            <h3>Long Polling</h3>
+            <p>Uses HTTP requests that wait for updates. Traditional but effective approach.</p>
+            <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-polling.html" class="selection-button">Chat with Long Polling</a>
+        </div>
+        <div class="chat-option">
+            <h3>WebSocket</h3>
+            <p>Keeps a persistent connection open. Messages flow instantly in real-time.</p>
+            <a href="https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/index-websocket.html" class="selection-button">Chat with WebSocket</a>
+        </div>
     </div>
 </body>
 </html>

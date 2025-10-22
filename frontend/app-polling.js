@@ -2,6 +2,7 @@
 const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
+const usernameInput = document.getElementById('usernameInput');
 
 // Automatically switches between local and deployed backend URLs based on the hostname.
 let backendUrl;
@@ -23,6 +24,10 @@ function renderMessages() {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
 
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('message-username');
+    usernameSpan.textContent = `${message.username}: `;
+
     // Create a span for the message text and use textContent for safety.
     const messageTextSpan = document.createElement('span');
     messageTextSpan.classList.add('message-text');
@@ -31,17 +36,26 @@ function renderMessages() {
     // Create a span for the timestamp and use textContent for safety.
     const messageTimestampSpan = document.createElement('span');
     messageTimestampSpan.classList.add('message-timestamp');
-    messageTimestampSpan.textContent = new Date(message.timestamp).toLocaleDateString();
+    messageTimestampSpan.textContent = new Date(message.timestamp).toLocaleString("en-GB", {
+      day: "2-digit", 
+      month: "short", 
+      hour: "2-digit", 
+      minute: "2-digit"
+    });
 
     const likeButton = document.createElement('button');
     likeButton.classList.add('like-btn');
     likeButton.dataset.id = message.id;
     likeButton.textContent = `❤️ ${message.likes || 0}`;
 
+    messageElement.appendChild(usernameSpan);
     messageElement.appendChild(messageTextSpan);
-    messageElement.appendChild(messageTimestampSpan);
-    messageElement.appendChild(likeButton);
-    
+    const bottom = document.createElement('div');
+    bottom.classList.add('message-bottom');
+    bottom.appendChild(messageTimestampSpan);
+    bottom.appendChild(likeButton);
+    messageElement.appendChild(bottom);
+
     messagesList.appendChild(messageElement);
   });
   messagesList.scrollTop = messagesList.scrollHeight;
@@ -111,8 +125,14 @@ async function fetchInitialMessages() {
 // Sends a new message to the backend via a POST request.
 async function sendMessages() {
   const text = messageInput.value.trim();
+  const username = usernameInput.value.trim();
 
   if (text === '') {
+    alert('Please enter your message!');
+    return;
+  }
+  if (username === '') {
+    alert('Please enter your name!');
     return;
   }
 
@@ -123,11 +143,12 @@ async function sendMessages() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ text: text })
+      body: JSON.stringify({ text: text, username: username })
     });
 
     if (response.ok) {
       messageInput.value = '';
+      usernameInput.value = '';
     } else {
       const errorData = await response.json();
       console.error('Error sending message:', errorData.error);

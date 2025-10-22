@@ -2,6 +2,7 @@
 const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
+const usernameInput = document.getElementById('usernameInput');
 
 // Automatically switches between local and deployed backend URLs based on the hostname.
 let backendWsUrl;
@@ -25,6 +26,10 @@ function renderMessages() {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
 
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('message-username');
+    usernameSpan.textContent = `${message.username}: `;
+
     // Create a span for the message text and use textContent for safety.
     const messageTextSpan = document.createElement('span');
     messageTextSpan.classList.add('message-text');
@@ -45,9 +50,14 @@ function renderMessages() {
     likeButton.dataset.id = message.id;
     likeButton.textContent = `❤️ ${message.likes || 0}`;
 
+    messageElement.appendChild(usernameSpan);
     messageElement.appendChild(messageTextSpan);
-    messageElement.appendChild(messageTimestampSpan);
-    messageElement.appendChild(likeButton);
+    const bottom = document.createElement('div');
+    bottom.classList.add('message-bottom');
+    bottom.appendChild(messageTimestampSpan);
+    bottom.appendChild(likeButton);
+    messageElement.appendChild(bottom);
+
 
     messagesList.appendChild(messageElement);
   });
@@ -57,8 +67,6 @@ function renderMessages() {
 //Sends a message to the WebSocket server with a specific command.
 function sendCommand(command, data) {
   const payload = JSON.stringify({ command, ...data });
-  console.log("Payload before stringify:", { command, ...data });
-  console.log("Payload JSON string:", payload);
   socket.send(payload);
 }
 
@@ -111,10 +119,20 @@ socket.onerror = (error) => {
 // Sends a new chat message from the input box.
 function sendMessage() {
   const text = messageInput.value.trim();
-  if (!text) return;
+  const username = usernameInput.value.trim();
 
-  sendCommand('send-message', { message: { text } });
-  messageInput.value = "";
+  if (!text) {
+    alert('Please enter your message!');
+    return;
+  }
+  if (!username) {
+    alert('Please enter your name!');
+    return;
+  }
+
+  sendCommand('send-message', { message: { text, username } });
+  messageInput.value = '';
+  usernameInput.value = '';
 }
 
 sendButton.addEventListener('click', sendMessage);

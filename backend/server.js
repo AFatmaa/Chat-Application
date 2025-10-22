@@ -61,15 +61,19 @@ app.get('/messages', (req, res) => {
 // Handle new chat message creation and notify waiting clients
 app.post('/messages', (req, res) => {
   // Validate user input before creating new message
-  const { text } = req.body; 
+  const { text, username } = req.body; 
 
   if (!text) {
     return res.status(400).json({ error: 'Message text is required.'});
+  }
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required.'})
   }
 
   const newMessage = {
     id: messages.length + 1,
     text: text,
+    username: username,
     timestamp: new Date().toISOString(),
     likes: 0
   };
@@ -153,9 +157,15 @@ wss.on("connection", (ws) => {
       switch (data.command) {
         // A client sends a new chat message
         case "send-message": {
+          if (!data.message.text || !data.message.username) {
+            console.warn("Missing text or username for send-message command.");
+            return;
+          }
+
           const newMessage = {
             id: messages.length + 1,
             text: data.message.text,
+            username: data.message.username,
             timestamp: new Date().toISOString(),
             likes: 0,
           };

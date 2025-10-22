@@ -43,9 +43,8 @@ h1 {
 /* Individual message */
 .message {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #e0f7fa; 
+  flex-direction: column;
+  background: #e0f7fa;
   padding: 10px 12px;
   border-radius: 10px;
   margin-bottom: 10px;
@@ -54,28 +53,49 @@ h1 {
 
 /* Alternating colors for variety */
 .message:nth-child(odd) {
-  background: #ffe0e0; 
+  background: #ffe0e0;
 }
 .message:nth-child(even) {
   background: #e0f7fa;
+}
+/* Message username */
+.message-username {
+  font-weight: bold;
+  color: #ff6f61;
+  margin-bottom: 4px;
 }
 
 /* Message text */
 .message-text {
   color: #333;
   font-weight: 500;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+.message-bottom {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  background: inherit; 
+  padding: 0; 
+  margin-top: 2px;
 }
 
 /* Timestamp */
 .message-timestamp {
   font-size: 0.75rem;
-  color: #666;
-  margin-left: 10px;
+  color: #555;
+  opacity: 0.85;
+  font-family: "Courier New", monospace;
 }
 
+
 /* Input and button area */
+#usernameInput,
 #messageInput {
-  width: 70%;
+  flex: 1;
   padding: 10px;
   border: 2px solid #ffb347;
   border-radius: 10px;
@@ -85,6 +105,7 @@ h1 {
 }
 
 /* Input focus */
+#usernameInput:focus,
 #messageInput:focus {
   border-color: #ff6f61;
   box-shadow: 0 0 6px rgba(255, 111, 97, 0.3);
@@ -92,9 +113,8 @@ h1 {
 
 /* Send button */
 #sendButton {
-  width: 25%;
+  min-width: 80px;
   padding: 10px;
-  margin-left: 5px;
   background: #ff6f61;
   border: none;
   border-radius: 10px;
@@ -121,9 +141,6 @@ h1 {
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
 /* Hover + click animation */
@@ -133,16 +150,14 @@ h1 {
   transform: scale(1.1);
 }
 
-/* Timestamp styling */
-.message-timestamp {
-  font-size: 0.75rem;
-  color: #555;
-  margin-left: auto;
-  margin-right: 8px;
-  opacity: 0.85;
-  font-family: "Courier New", monospace;
+/* Username + message + send button inline */
+.input-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
-
 /* Landing Page Container */
 .landing-container {
   background: #ffffff;
@@ -198,8 +213,7 @@ h1 {
   border: 2px solid #ffb347;
   border-radius: 12px;
   padding: 15px;
-  margin: 10px auto; 
-  margin-bottom: 20px;
+  margin: 10px auto 20px;
   text-align: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }

@@ -22,11 +22,26 @@ function renderMessages() {
   messages.forEach(message => {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message');
-    messageElement.innerHTML = `
-      <span class="message-text">${message.text}</span>
-      <span class="message-timestamp">${new Date(message.timestamp).toLocaleDateString()}</span>
-      <button class="like-btn" data-id="${message.id}">❤️ ${message.likes || 0}</button>
-    `;
+
+    // Create a span for the message text and use textContent for safety.
+    const messageTextSpan = document.createElement('span');
+    messageTextSpan.classList.add('message-text');
+    messageTextSpan.textContent = message.text;
+
+    // Create a span for the timestamp and use textContent for safety.
+    const messageTimestampSpan = document.createElement('span');
+    messageTimestampSpan.classList.add('message-timestamp');
+    messageTimestampSpan.textContent = new Date(message.timestamp).toLocaleDateString();
+
+    const likeButton = document.createElement('button');
+    likeButton.classList.add('like-btn');
+    likeButton.dataset.id = message.id;
+    likeButton.textContent = `❤️ ${message.likes || 0}`;
+
+    messageElement.appendChild(messageTextSpan);
+    messageElement.appendChild(messageTimestampSpan);
+    messageElement.appendChild(likeButton);
+    
     messagesList.appendChild(messageElement);
   });
   messagesList.scrollTop = messagesList.scrollHeight;

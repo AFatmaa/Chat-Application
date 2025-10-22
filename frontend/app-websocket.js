@@ -3,7 +3,17 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const socket = new WebSocket('wss://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io');
+// Automatically switches between local and deployed backend URLs based on the hostname.
+let backendWsUrl;
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  backendWsUrl = 'ws://localhost:3000';
+  console.log('WebSocket: Running in local mode. Using local backend WebSocket.');
+} else {
+  backendWsUrl = 'wss://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
+  console.log('WebSocket: Running in deployed mode. Using live backend WebSocket.');
+}
+
+const socket = new WebSocket(backendWsUrl);
 
 // Store all messages locally in the browser.
 let messages = [];

@@ -3,7 +3,15 @@ const messagesList = document.getElementById('messagesList');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 
-const backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
+// Automatically switches between local and deployed backend URLs based on the hostname.
+let backendUrl;
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  backendUrl = 'http://localhost:3000';
+  console.log('Long Polling: Running in local mode. Using local backend.');
+} else {
+  backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
+  console.log('Long Polling: Running in deployed mode. Using live backend.');
+}
 
 // Global array to store messages in the frontend's memory.
 let messages = [];

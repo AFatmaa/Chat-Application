@@ -100,6 +100,29 @@ app.post('/messages', (req, res) => {
   });
 });
 
+app.post('/messages/:messageId/like', (req, res) => {
+  const messageId = parseInt(req.params.messageId);
+
+  const messageToLike = messages.find(msg => msg.id === messageId);
+
+  if (!messageToLike) {
+    return res.status(404).json({ error: 'Message not found.' });
+  }
+
+  messageToLike.likes = (messageToLike.likes || 0) + 1;
+
+  broadcast({
+    command: "like-update",
+    messageId: messageToLike.id,
+    likes: messageToLike.likes,
+  });
+
+  res.status(200).json({
+    message: 'Message liked successfully.',
+    likes: messageToLike.likes
+  });
+});
+
 // Helper: send data to all connected WebSocket clients
 function broadcast(data) {
   const json = JSON.stringify(data);

@@ -17,6 +17,7 @@ function renderMessages() {
     messageElement.innerHTML = `
       <span class="message-text">${message.text}</span>
       <span class="message-timestamp">${new Date(message.timestamp).toLocaleDateString()}</span>
+      <button class="like-btn" data-id="${message.id}">❤️ ${message.likes || 0}</button>
     `;
     messagesList.appendChild(messageElement);
   });
@@ -124,6 +125,33 @@ messageInput.addEventListener('keypress', (e) => {
     sendMessages();
   }
 });
+
+messagesList.addEventListener('click', async (e) => {
+  if (e.target.classList.contains('like-btn')) {
+    const messageId = Number(e.target.dataset.id);
+
+    try {
+      const response = await fetch(`${backendUrl}/messages/${messageId}/like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const likedMessage = messages.find(msg => msg.id === messageId);
+      if (likedMessage) {
+        likedMessage.likes = (likedMessage.likes || 0) + 1;
+        renderMessages();
+      }
+    } catch (error) {
+      console.error('Error liking message:', error);
+    }
+  }
+})
 
 function initChatApp() {
   fetchInitialMessages();

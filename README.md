@@ -90,23 +90,34 @@ WebSocket is like a phone call between client and server. Once connected, both c
 ## API Endpoints
 
 ### GET /messages
-- Get all messages or wait for new ones
-- Query parameter: `since` (timestamp)
+- Get all messages or wait for new ones (long polling)
+- Query parameter: 
+  - `since`: ISO timestamp — return only messages after this time
 
 ### POST /messages
 - Send a new message
-- Body: `{ "text": "your message" }`
+- Body: `{ "text": "your message", "username": "your name" }`
+
+### POST /messages/:messageId/like
+- Like a specific message
+- Response: `{ "message": "Message liked successfully.", "likes": 3 }`
 
 ## WebSocket Commands
 
 ### Client to Server
-- `send-message`: Send a new chat message
-- `like-message`: Like a message
+
+| Command        | Description             | Payload Example                                                                    |
+| -------------- | ----------------------- | ---------------------------------------------------------------------------------- |
+| `send-message` | Send a new chat message | `{ "command": "send-message", "message": { "text": "Hi!", "username": "Fatma" } }` |
+| `like-message` | Like a specific message | `{ "command": "like-message", "messageId": 2 }`                                    |
 
 ### Server to Client
-- `initial-messages`: All existing messages
-- `new-message`: A new message arrived
-- `like-update`: Someone liked a message
+
+| Command            | Description                                        | Payload Example                                                                                                            |
+| ------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `initial-messages` | Sends all existing messages when a client connects | `{ "command": "initial-messages", "messages": [ ... ] }`                                                                   |
+| `new-message`      | Sends a new incoming message                       | `{ "command": "new-message", "message": { "id": 3, "text": "Hi!", "username": "Fatma", "timestamp": "...", "likes": 0 } }` |
+| `like-update`      | Updates like count for a specific message          | `{ "command": "like-update", "messageId": 3, "likes": 5 }`                                                                 |
 
 ## License
 

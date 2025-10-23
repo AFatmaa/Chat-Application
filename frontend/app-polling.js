@@ -62,9 +62,10 @@ function renderMessages() {
 }
 
 // Starts a single long-polling request to the backend for new messages.
-async function startLongPolling() {
+async function startLongPolling(lastSince = null) {
 
-  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
+  // Prevent fetching the same first message again when polling starts.
+  const lastMessageTime = lastSince || messages.length > 0 ? messages[messages.length - 1].timestamp : null;
   const queryString = lastMessageTime ? `?since=${lastMessageTime}` : '';
   const url = `${backendUrl}/messages${queryString}`;
 
@@ -80,8 +81,15 @@ async function startLongPolling() {
     if (newMessages.length > 0) {
 
       newMessages.forEach(newMsg => {
-        // Only add if message with same id does not already exist
-        if (!messages.some(msg => msg.id === newMsg.id)) {
+        // If it's a like update, find the matching message and update its like count
+        if (newMsg.command === 'like-update') {
+          const likedMsg = messages.find(msg => msg.id === newMsg.messageId);
+          if (likedMsg) {
+            likedMsg.likes = newMsg.likes;
+          }
+        } 
+        // Otherwise, add the new message if it doesn't already exist
+        else if (newMsg.id && !messages.some(msg => msg.id === newMsg.id)) {
           messages.push(newMsg);
         }
       });
@@ -197,9 +205,13 @@ messagesList.addEventListener('click', async (e) => {
   }
 })
 
-function initChatApp() {
-  fetchInitialMessages();
-  startLongPolling();
+// Load existing messages first, then start long-polling from the last message timestamp
+// to avoid duplicate updates (especially the first like or message).
+async function initChatApp() {
+  await fetchInitialMessages();
+
+  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
+  startLongPolling(lastMessageTime);
 }
 
 initChatApp();

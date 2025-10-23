@@ -82,22 +82,6 @@ app.post('/messages', (req, res) => {
 
   res.status(201).json(newMessage);
 
-  // Iterate through the waiting clients.
-  for (let i = callBackForNewMessages.length -1; i >= 0; i--) {
-    const waitingClient = callBackForNewMessages[i];
-    
-    if (newMessage.timestamp > waitingClient.since) {
-      clearTimeout(waitingClient.timeoutId);
-
-      // Ensure a response hasn't already been sent.
-      if (!waitingClient.res.headersSent) {
-        // Send the new message (as an array) to the waiting client.
-        waitingClient.res.status(200).json([newMessage]);
-      }
-      // Remove the client from the waiting queue.
-      callBackForNewMessages.splice(i, 1);
-    }
-  }
   broadcast({
     command: "new-message",
     message: newMessage,
@@ -127,14 +111,30 @@ app.post('/messages/:messageId/like', (req, res) => {
   });
 });
 
-// Helper: send data to all connected WebSocket clients
+// Send data to all connected WebSocket and Long-polling clients
 function broadcast(data) {
   const json = JSON.stringify(data);
+
+  // Send to all active WebSocket clients
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(json);
     }
   });
+
+  // Notify all waiting long-polling clients
+  for (let i = callBackForNewMessages.length -1; i >= 0; i--) {
+    const waitingClient = callBackForNewMessages[i];
+
+    // Ensure a response hasn't already been sent
+    if (!waitingClient.res.headersSent) {
+      waitingClient.res.status(200).json([data]);
+    }
+
+    // Clear the timeout and remove the client from the waiting queue
+    clearTimeout(waitingClient.timeoutId);
+    callBackForNewMessages.splice(i, 1);
+  }
 }
 
 // Handle WebSocket connections

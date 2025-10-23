@@ -1,71 +1,11 @@
-// Get references to DOM elements
-const messagesList = document.getElementById('messagesList');
-const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
-const usernameInput = document.getElementById('usernameInput');
-
-// Automatically switches between local and deployed backend URLs based on the hostname.
-let backendUrl;
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  backendUrl = 'http://localhost:3000';
-  console.log('Long Polling: Running in local mode. Using local backend.');
-} else {
-  backendUrl = 'https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
-  console.log('Long Polling: Running in deployed mode. Using live backend.');
-}
-
-// Global array to store messages in the frontend's memory.
-let messages = [];
-
-// It clears the existing display and adds each message as a new HTML element.
-function renderMessages() {
-  messagesList.innerHTML = '';
-  messages.forEach(message => {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
-
-    const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('message-username');
-    usernameSpan.textContent = `${message.username}: `;
-
-    // Create a span for the message text and use textContent for safety.
-    const messageTextSpan = document.createElement('span');
-    messageTextSpan.classList.add('message-text');
-    messageTextSpan.textContent = message.text;
-
-    // Create a span for the timestamp and use textContent for safety.
-    const messageTimestampSpan = document.createElement('span');
-    messageTimestampSpan.classList.add('message-timestamp');
-    messageTimestampSpan.textContent = new Date(message.timestamp).toLocaleString("en-GB", {
-      day: "2-digit", 
-      month: "short", 
-      hour: "2-digit", 
-      minute: "2-digit"
-    });
-
-    const likeButton = document.createElement('button');
-    likeButton.classList.add('like-btn');
-    likeButton.dataset.id = message.id;
-    likeButton.textContent = `❤️ ${message.likes || 0}`;
-
-    messageElement.appendChild(usernameSpan);
-    messageElement.appendChild(messageTextSpan);
-    const bottom = document.createElement('div');
-    bottom.classList.add('message-bottom');
-    bottom.appendChild(messageTimestampSpan);
-    bottom.appendChild(likeButton);
-    messageElement.appendChild(bottom);
-
-    messagesList.appendChild(messageElement);
-  });
-  messagesList.scrollTop = messagesList.scrollHeight;
-}
+// Get backend URL from shared utilities
+const backendUrl = getBackendUrls().http;
 
 // Starts a single long-polling request to the backend for new messages.
-async function startLongPolling(lastSince = null) {
+async function startLongPolling() {
 
-  // Prevent fetching the same first message again when polling starts.
-  const lastMessageTime = lastSince || messages.length > 0 ? messages[messages.length - 1].timestamp : null;
+  // Use the timestamp of the last message, or current time if no messages exist
+  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
   const queryString = lastMessageTime ? `?since=${lastMessageTime}` : '';
   const url = `${backendUrl}/messages${queryString}`;
 
@@ -79,27 +19,38 @@ async function startLongPolling(lastSince = null) {
 
     // If new messages are received, add them to our global 'messages' array and rerender.
     if (newMessages.length > 0) {
+      let hasNewMessage = false;
 
-      newMessages.forEach(newMsg => {
+      newMessages.forEach(data => {
         // If it's a like update, find the matching message and update its like count
-        if (newMsg.command === 'like-update') {
-          const likedMsg = messages.find(msg => msg.id === newMsg.messageId);
+        if (data.command === 'like-update') {
+          const likedMsg = messages.find(msg => msg.id === data.messageId);
           if (likedMsg) {
-            likedMsg.likes = newMsg.likes;
+            likedMsg.likes = data.likes;
           }
-        } 
-        // Otherwise, add the new message if it doesn't already exist
-        else if (newMsg.id && !messages.some(msg => msg.id === newMsg.id)) {
-          messages.push(newMsg);
+        } else if (data.command === 'new-message') {
+          // Handle new message from broadcast
+          if (!messages.some(msg => msg.id === data.message.id)) {
+            messages.push(data.message);
+            hasNewMessage = true; // Mark that we have a new message
+          }
+        } else if (data.id) {
+          // Handle direct message object (from initial load or when no 'since' param)
+          if (!messages.some(msg => msg.id === data.id)) {
+            messages.push(data);
+            hasNewMessage = true; // Mark that we have a new message
+          }
         }
       });
-      renderMessages();
+      // Only scroll to bottom if we added a new message
+      renderMessages(hasNewMessage);
     }
   } catch (error) {
     console.error('[Frontend Error] Long-polling request failed:', error.message);
   } finally {
-    // Wait a very short moment and the start the next long-polling request.
-    setTimeout(startLongPolling, 1000);
+    // Use smart delay: if no messages yet, wait longer to reduce unnecessary requests
+    const delay = messages.length > 0 ? 100 : 2000;
+    setTimeout(startLongPolling, delay);
   }
   
 }
@@ -117,10 +68,8 @@ async function fetchInitialMessages() {
     }
 
     const fetchedMessages = await response.json();
-
     messages = fetchedMessages;
-
-    renderMessages();
+    renderMessages(true);
 
   } catch (error) {
     console.error('Error loading initial chat messages:', error);
@@ -132,18 +81,15 @@ async function fetchInitialMessages() {
 
 // Sends a new message to the backend via a POST request.
 async function sendMessages() {
-  const text = messageInput.value.trim();
-  const username = usernameInput.value.trim();
+  const result = validateMessageInput();
 
-  if (text === '') {
-    alert('Please enter your message!');
-    return;
-  }
-  if (username === '') {
-    alert('Please enter your name!');
+  // If validation failed, show error and stop
+  if (result.error) {
+    alert(result.error);
     return;
   }
 
+  // If validation passed, result contains text and username
   try {
     // Send a POST request to the backend's /messages endpoint.
     const response = await fetch(`${backendUrl}/messages`, {
@@ -151,12 +97,14 @@ async function sendMessages() {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ text: text, username: username })
+      body: JSON.stringify({ 
+        text: result.text, 
+        username: result.username 
+      })
     });
 
     if (response.ok) {
-      messageInput.value = '';
-      usernameInput.value = '';
+      clearInputs();
     } else {
       const errorData = await response.json();
       console.error('Error sending message:', errorData.error);
@@ -170,6 +118,31 @@ async function sendMessages() {
   
 }
 
+// Handles like button clicks
+async function handleLike(messageId) {
+  try {
+    const response = await fetch(`${backendUrl}/messages/${messageId}/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Update local state immediately for better UX
+    const likedMessage = messages.find(msg => msg.id === messageId);
+    if (likedMessage) {
+      likedMessage.likes = (likedMessage.likes || 0) + 1;
+      renderMessages(false);
+    }
+  } catch (error) {
+    console.error('Error liking message:', error);
+  }
+}
+
 sendButton.addEventListener('click', sendMessages);
 
 messageInput.addEventListener('keypress', (e) => {
@@ -181,37 +154,13 @@ messageInput.addEventListener('keypress', (e) => {
 messagesList.addEventListener('click', async (e) => {
   if (e.target.classList.contains('like-btn')) {
     const messageId = Number(e.target.dataset.id);
-
-    try {
-      const response = await fetch(`${backendUrl}/messages/${messageId}/like`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const likedMessage = messages.find(msg => msg.id === messageId);
-      if (likedMessage) {
-        likedMessage.likes = (likedMessage.likes || 0) + 1;
-        renderMessages();
-      }
-    } catch (error) {
-      console.error('Error liking message:', error);
-    }
+    handleLike(messageId);
   }
 })
 
-// Load existing messages first, then start long-polling from the last message timestamp
-// to avoid duplicate updates (especially the first like or message).
 async function initChatApp() {
   await fetchInitialMessages();
-
-  const lastMessageTime = messages.length > 0 ? messages[messages.length - 1].timestamp : null;
-  startLongPolling(lastMessageTime);
+  startLongPolling();
 }
 
 initChatApp();

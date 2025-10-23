@@ -25,6 +25,7 @@ Chat Application/
     ├── index.html              # Landing page
     ├── index-polling.html      # Long polling chat
     ├── index-websocket.html    # WebSocket chat
+    ├── shared.js               # Shared utilities for both implementations
     ├── app-polling.js          # Long polling code
     ├── app-websocket.js        # WebSocket code
     └── style.css               # Styles
@@ -37,6 +38,8 @@ Chat Application/
 - 🔄 Two communication methods:
   - **Long Polling**: Traditional HTTP requests
   - **WebSocket**: Real-time connection
+- 📜 Smart scroll behavior (stays in place when liking, scrolls down for new messages)
+- 🎨 Clean, reusable code structure
 
 ## How to Run
 
@@ -81,11 +84,33 @@ The server will run on `http://localhost:3000`
 
 ## What is Long Polling?
 
-Long polling is when the client asks the server "Do you have new messages?" and waits. If there are no new messages, the server keeps the connection open until a message arrives or time runs out.
+Long polling is when the client asks the server "Do you have new messages?" and waits. If there are no new messages, the server keeps the connection open until a message arrives or time runs out (25 seconds in this app).
+
+#### Advantages:
+
+- Works with standard HTTP
+- No special server requirements
+- Good browser compatibility
+
+#### Disadvantages:
+
+- More server requests
+- Slight delay in updates
 
 ## What is WebSocket?
 
 WebSocket is like a phone call between client and server. Once connected, both can send messages anytime without asking permission first. This is faster and more efficient.
+
+#### Advantages:
+
+- Real-time, instant updates
+- Less server overhead
+- Two-way communication
+
+#### Disadvantages:
+
+- Requires WebSocket support
+- More complex to implement
 
 ## API Endpoints
 

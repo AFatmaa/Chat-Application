@@ -1,70 +1,9 @@
-// Get references to DOM elements
-const messagesList = document.getElementById('messagesList');
-const messageInput = document.getElementById('messageInput');
-const sendButton = document.getElementById('sendButton');
-const usernameInput = document.getElementById('usernameInput');
-
-// Automatically switches between local and deployed backend URLs based on the hostname.
-let backendWsUrl;
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  backendWsUrl = 'ws://localhost:3000';
-  console.log('WebSocket: Running in local mode. Using local backend WebSocket.');
-} else {
-  backendWsUrl = 'wss://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io';
-  console.log('WebSocket: Running in deployed mode. Using live backend WebSocket.');
-}
+// Get backend WebSocket URL from shared utilities
+const backendWsUrl = getBackendUrls().ws;
 
 const socket = new WebSocket(backendWsUrl);
 
-// Store all messages locally in the browser.
-let messages = [];
-
-// It clears the existing display and adds each message as a new HTML element.
-function renderMessages() {
-  messagesList.innerHTML = '';
-  messages.forEach(message => {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message');
-
-    const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('message-username');
-    usernameSpan.textContent = `${message.username}: `;
-
-    // Create a span for the message text and use textContent for safety.
-    const messageTextSpan = document.createElement('span');
-    messageTextSpan.classList.add('message-text');
-    messageTextSpan.textContent = message.text;
-
-    // Create a span for the timestamp and use textContent for safety.
-    const messageTimestampSpan = document.createElement('span');
-    messageTimestampSpan.classList.add('message-timestamp');
-    messageTimestampSpan.textContent = new Date(message.timestamp).toLocaleString("en-GB", {
-      day: "2-digit", 
-      month: "short", 
-      hour: "2-digit", 
-      minute: "2-digit"
-    });
-
-    const likeButton = document.createElement('button');
-    likeButton.classList.add('like-btn');
-    likeButton.dataset.id = message.id;
-    likeButton.textContent = `❤️ ${message.likes || 0}`;
-
-    messageElement.appendChild(usernameSpan);
-    messageElement.appendChild(messageTextSpan);
-    const bottom = document.createElement('div');
-    bottom.classList.add('message-bottom');
-    bottom.appendChild(messageTimestampSpan);
-    bottom.appendChild(likeButton);
-    messageElement.appendChild(bottom);
-
-
-    messagesList.appendChild(messageElement);
-  });
-  messagesList.scrollTop = messagesList.scrollHeight;
-}
-
-//Sends a message to the WebSocket server with a specific command.
+// Sends a message to the WebSocket server with a specific command.
 function sendCommand(command, data) {
   const payload = JSON.stringify({ command, ...data });
   socket.send(payload);
@@ -83,13 +22,13 @@ socket.onmessage = (event) => {
     // When the server sends the full chat history.
     case 'initial-messages':
       messages = data.messages;
-      renderMessages();
+      renderMessages(true);
       break;
 
     // When a new message is received from any client.
     case 'new-message':
       messages.push(data.message);
-      renderMessages();
+      renderMessages(true);
       break;
 
     // When a like count is updated.
@@ -97,7 +36,7 @@ socket.onmessage = (event) => {
       const msg = messages.find((m) => m.id === data.messageId);
       if (msg) {
         msg.likes = data.likes;
-        renderMessages();
+        renderMessages(false);
       }
       break;
 
@@ -118,21 +57,23 @@ socket.onerror = (error) => {
 
 // Sends a new chat message from the input box.
 function sendMessage() {
-  const text = messageInput.value.trim();
-  const username = usernameInput.value.trim();
+  const result = validateMessageInput();
 
-  if (!text) {
-    alert('Please enter your message!');
-    return;
-  }
-  if (!username) {
-    alert('Please enter your name!');
+  // If validation failed, show error and stop
+  if (result.error) {
+    alert(result.error);
     return;
   }
 
-  sendCommand('send-message', { message: { text, username } });
-  messageInput.value = '';
-  usernameInput.value = '';
+  // If validation passed, result contains text and username
+  sendCommand('send-message', { 
+    message: { 
+      text: result.text, 
+      username: result.username
+    } 
+  });
+
+  clearInputs();
 }
 
 sendButton.addEventListener('click', sendMessage);

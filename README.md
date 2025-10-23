@@ -6,6 +6,13 @@ A simple real-time chat application with two different ways to communicate: **Lo
 
 This is a chat app where people can send messages and like them. It shows two different ways computers can talk to each other in real-time.
 
+## Live Demo
+
+You can try the live version here:
+
+- **Backend Server**: [https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/](https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/)
+- **Frontend App**: [https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/](https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/)
+
 ## Project Structure
 
 ```
@@ -58,13 +65,6 @@ The server will run on `http://localhost:3000`
 2. Open `index.html` in your web browser
 3. Choose Long Polling or WebSocket
 4. Start chatting!
-
-## Live Demo
-
-You can try the live version here:
-
-- **Backend Server**: [https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/](https://afatmaa-my-chat-app-backend.hosting.codeyourfuture.io/)
-- **Frontend App**: [https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/](https://afatmaa-my-chat-app-frontend.hosting.codeyourfuture.io/)
 
 ## Technologies Used
 

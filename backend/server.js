@@ -17,6 +17,17 @@ let messages = [];
 // Keeps track of clients waiting for new messages (for long-polling)
 const callBackForNewMessages = [];
 
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Chat API is running!',
+    endpoints: {
+      'GET /messages': 'Get all messages or long-poll for new ones',
+      'POST /messages': 'Send a new message',
+      'POST /messages/:messageId/like': 'Like a message'
+    }
+  });
+});
+
 // Returns existing messages or waits for new ones (long-polling)
 app.get('/messages', (req, res) => { 
   // Get the 'since' parameter from the request URL

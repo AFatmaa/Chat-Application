@@ -13,6 +13,8 @@ const port = 3000;
 
 // Stores chat messages temporarily (resets when server restarts)
 let messages = [];
+let messagesMap = new Map();
+let messageIdCounter = 1;
 
 // Keeps track of clients waiting for new messages (for long-polling)
 const callBackForNewMessages = [];
@@ -82,7 +84,7 @@ app.post('/messages', (req, res) => {
   }
 
   const newMessage = {
-    id: messages.length + 1,
+    id: messageIdCounter++,
     text: text,
     username: username,
     timestamp: new Date().toISOString(),
@@ -90,6 +92,7 @@ app.post('/messages', (req, res) => {
   };
 
   messages.push(newMessage);
+  messagesMap.set(newMessage.id, newMessage); 
 
   res.status(201).json(newMessage);
 
@@ -102,7 +105,7 @@ app.post('/messages', (req, res) => {
 app.post('/messages/:messageId/like', (req, res) => {
   const messageId = parseInt(req.params.messageId);
 
-  const messageToLike = messages.find(msg => msg.id === messageId);
+  const messageToLike = messagesMap.get(messageId);
 
   if (!messageToLike) {
     return res.status(404).json({ error: 'Message not found.' });
@@ -150,7 +153,7 @@ function broadcast(data) {
 
 // Handle WebSocket connections
 wss.on("connection", (ws) => {
-  console.log("✅ New WebSocket client connected");
+  console.log("New WebSocket client connected");
 
   // When a new client connects, send existing messages
   ws.send(
@@ -174,13 +177,14 @@ wss.on("connection", (ws) => {
           }
 
           const newMessage = {
-            id: messages.length + 1,
+            id: messageIdCounter++,
             text: data.message.text,
             username: data.message.username,
             timestamp: new Date().toISOString(),
             likes: 0,
           };
           messages.push(newMessage);
+          messagesMap.set(newMessage.id, newMessage); 
 
           // Broadcast to all clients (both WebSocket + polling)
           broadcast({
@@ -192,7 +196,7 @@ wss.on("connection", (ws) => {
 
         // A client likes a specific message
         case "like-message": {
-          const msg = messages.find((m) => m.id === data.messageId);
+          const msg = messagesMap.get(data.messageId);
           if (msg) {
             msg.likes += 1;
 
@@ -216,7 +220,7 @@ wss.on("connection", (ws) => {
 
   // Handle WebSocket disconnection
   ws.on("close", () => {
-    console.log("❌ WebSocket client disconnected");
+    console.log("WebSocket client disconnected");
   });
 });
 
